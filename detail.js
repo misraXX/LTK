@@ -48,7 +48,7 @@ function renderEventDetail(data) {
     return;
   }
   document.getElementById('event-detail').innerHTML = `
-    <h1 class="event-title">${formatTitleWithBr(data.title)}</h1>
+    <h1 class="detail-event-title">${formatTitleWithBr(data.title)}</h1>
     <div class="event-teams-list">
       ${data.teams.map(createTeamHtml).join('')}
     </div>
