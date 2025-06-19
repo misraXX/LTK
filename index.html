@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>イベント情報サイト</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core/index.global.min.js'></script>
+  <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid/index.global.min.js'></script>
+  <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/interaction/index.global.min.js'></script>
+  <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/core/main.min.css' rel='stylesheet' />
+  <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid/main.min.css' rel='stylesheet' />
+</head>
+<body>
+  <div id="header"></div>
+  <div class="main-layout">
+    <!-- 左カラム：フィルター -->
+    <aside class="sidebar">
+      <div class="sidebar-title">大会フィルター</div>
+      <ul class="tournament-list">
+        <li><label><input type="checkbox" value="LTK" checked> <img src="images/LTK.png" alt="LTK" class="tournament-logo" onerror="this.style.display='none'"> LTK</label></li>
+        <li><label><input type="checkbox" value="PCS" checked> <img src="images/PCS.png" alt="PCS" class="tournament-logo" onerror="this.style.display='none'"> PCS</label></li>
+        <li><label><input type="checkbox" value="LJL" checked> <img src="images/LJL.png" alt="LJL" class="tournament-logo" onerror="this.style.display='none'"> LJL</label></li>
+        <li><label><input type="checkbox" value="LCK" checked> <img src="images/LCK.png" alt="LCK" class="tournament-logo" onerror="this.style.display='none'"> LCK</label></li>
+      </ul>
+    </aside>
+
+    <!-- 中央カラム：カレンダー -->
+    <main class="content">
+      <section id="home">
+        <div id="calendar"></div>
+      </section>
+    </main>
+
+    <!-- 右カラム：ニュース -->
+    <aside class="newsbar">
+      <div class="statsbar">
+        <div class="statsbar-title">スタッツランキング</div>
+        <ul class="stats-list">
+          <li><span class="stats-rank">1</span> <img src="https://randomuser.me/api/portraits/men/1.jpg" class="stats-thumb" alt="1位"> <span class="stats-name">Player One</span> <span class="stats-value">KDA 8.5</span></li>
+          <li><span class="stats-rank">2</span> <img src="https://randomuser.me/api/portraits/women/2.jpg" class="stats-thumb" alt="2位"> <span class="stats-name">Player Two</span> <span class="stats-value">KDA 7.9</span></li>
+          <li><span class="stats-rank">3</span> <img src="https://randomuser.me/api/portraits/men/3.jpg" class="stats-thumb" alt="3位"> <span class="stats-name">Player Three</span> <span class="stats-value">KDA 7.2</span></li>
+        </ul>
+      </div>
+      <div class="newsbar-title">ニュース</div>
+      <ul class="news-list">
+        <li>
+          <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=facearea&w=80&h=80" alt="MSI 2025" class="news-thumb">
+          <div class="news-info">
+            <div class="news-title">MSI 2025 観戦ガイド</div>
+            <div class="news-date">2025年6月17日</div>
+          </div>
+        </li>
+        <li>
+          <img src="https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=facearea&w=80&h=80" alt="LJL 2025" class="news-thumb">
+          <div class="news-info">
+            <div class="news-title">LJL 2025 IGNITE - 新たな才能が激突する！</div>
+            <div class="news-date">2025年5月21日</div>
+          </div>
+        </li>
+        <li>
+          <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=80&h=80" alt="Uzi" class="news-thumb">
+          <div class="news-info">
+            <div class="news-title">Hall of Legends: Uzi | トレーラー</div>
+            <div class="news-date">2025年5月20日</div>
+          </div>
+        </li>
+      </ul>
+    </aside>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    fetch('header.html')
+      .then(res => res.text())
+      .then(html => { document.getElementById('header').innerHTML = html; });
+  </script>
+</body>
+</html>
+<!-- 
+LTK特設サイト/index.html
+カレンダーの下に「このカレンダーはGoogleスプレッドシートのデータを元に自動生成されています。データ修正・追加希望は運営までご連絡ください。」という注意書きを小さくグレーで表示してください。
+-->
+
+<style>
+  .calendar-note {
+    font-size: 0.9em;
+    color: #888;
+    margin-top: 12px;
+    text-align: center;
+  }
+</style>
+<div class="calendar-note">
+
