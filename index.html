@@ -5,77 +5,87 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>イベント情報サイト</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://apis.google.com/js/api.js"></script>
-  <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core/index.global.min.js'></script>
-  <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid/index.global.min.js'></script>
-  <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/interaction/index.global.min.js'></script>
-  <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/core/main.min.css' rel='stylesheet' />
-  <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid/main.min.css' rel='stylesheet' />
+  <!-- FullCalendarのライブラリ -->
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar/index.global.min.js'></script>
+
+  <!-- Firebase App (Core) - 互換版（compat）を読み込む -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <!-- Firestore - 互換版（compat）を読み込む -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    /* カレンダーイベントのカスタムスタイル */
+    .fc-event-main-content {
+        padding: 4px;
+        line-height: 1.4;
+    }
+    .event-title {
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .event-time, .event-site {
+        font-size: 0.9em;
+        color: #ddd;
+    }
+    .calendar-note {
+        font-size: 0.9em;
+        color: #888;
+        margin-top: 12px;
+        text-align: center;
+    }
+  </style>
 </head>
 <body>
-  <div id="header"></div>
-  <div class="main-layout">
-    <!-- 左カラム：フィルター -->
-    <aside class="sidebar">
-      <div class="sidebar-title">大会フィルター</div>
-      <ul class="tournament-list">
-        <li><label><input type="checkbox" value="LTK" checked> <img src="images/LTK.png" alt="LTK" class="tournament-logo" onerror="this.style.display='none'"> LTK</label></li>
-        <li><label><input type="checkbox" value="PCS" checked> <img src="images/PCS.png" alt="PCS" class="tournament-logo" onerror="this.style.display='none'"> PCS</label></li>
-        <li><label><input type="checkbox" value="LJL" checked> <img src="images/LJL.png" alt="LJL" class="tournament-logo" onerror="this.style.display='none'"> LJL</label></li>
-        <li><label><input type="checkbox" value="LCK" checked> <img src="images/LCK.png" alt="LCK" class="tournament-logo" onerror="this.style.display='none'"> LCK</label></li>
-      </ul>
-    </aside>
-
-    <!-- 中央カラム：カレンダー -->
-    <main class="content">
-      <section id="home">
-        <div id="calendar"></div>
-      </section>
-    </main>
-
-    <!-- 右カラム：ニュース -->
-    <aside class="newsbar">
-      <div class="statsbar">
-        <div class="statsbar-title">スタッツランキング</div>
-        <ul class="stats-list">
-          <li><span class="stats-rank">1</span> <img src="https://randomuser.me/api/portraits/men/1.jpg" class="stats-thumb" alt="1位"> <span class="stats-name">Player One</span> <span class="stats-value">KDA 8.5</span></li>
-          <li><span class="stats-rank">2</span> <img src="https://randomuser.me/api/portraits/women/2.jpg" class="stats-thumb" alt="2位"> <span class="stats-name">Player Two</span> <span class="stats-value">KDA 7.9</span></li>
-          <li><span class="stats-rank">3</span> <img src="https://randomuser.me/api/portraits/men/3.jpg" class="stats-thumb" alt="3位"> <span class="stats-name">Player Three</span> <span class="stats-value">KDA 7.2</span></li>
+  <div class="main-container">
+    <div id="header"></div>
+    <div class="main-layout">
+      <!-- 左カラム：フィルター -->
+      <aside class="sidebar">
+        <div class="sidebar-title">大会フィルター</div>
+        <ul class="tournament-list">
+          <li><label><input type="checkbox" value="LTK" checked> LTK</label></li>
+          <li><label><input type="checkbox" value="PCS" checked> PCS</label></li>
+          <li><label><input type="checkbox" value="LJL" checked> LJL</label></li>
+          <li><label><input type="checkbox" value="LCK" checked> LCK</label></li>
+          <!-- ロゴ画像は一旦削除し、シンプルにします -->
         </ul>
-      </div>
-      <div class="newsbar-title">ニュース</div>
-      <ul class="news-list">
-        <li>
-          <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=facearea&w=80&h=80" alt="MSI 2025" class="news-thumb">
-          <div class="news-info">
-            <div class="news-title">MSI 2025 観戦ガイド</div>
-            <div class="news-date">2025年6月17日</div>
+      </aside>
+
+      <!-- 中央カラム：カレンダー -->
+      <main class="content">
+        <section id="home">
+          <div id="calendar"></div>
+          <div class="calendar-note">
           </div>
-        </li>
-        <li>
-          <img src="https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=facearea&w=80&h=80" alt="LJL 2025" class="news-thumb">
-          <div class="news-info">
-            <div class="news-title">LJL 2025 IGNITE - 新たな才能が激突する！</div>
-            <div class="news-date">2025年5月21日</div>
+        </section>
+      </main>
+
+      <!-- 右カラム：ニュースとスタッツ -->
+      <aside class="newsbar">
+        <div class="statsbar">
+          <div class="statsbar-title">KDAランキング TOP 3</div>
+          <div class="ranking-list" id="kda-ranking-list">
+            <!-- ここにFirestoreから取得したランキングが表示されます -->
           </div>
-        </li>
-        <li>
-          <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=80&h=80" alt="Uzi" class="news-thumb">
-          <div class="news-info">
-            <div class="news-title">Hall of Legends: Uzi | トレーラー</div>
-            <div class="news-date">2025年5月20日</div>
-          </div>
-        </li>
-      </ul>
-    </aside>
+        </div>
+        <div class="newsbar-title">ニュース</div>
+        <ul class="news-list">
+          <!-- ニュース部分は静的なままにします -->
+          <li>
+            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=facearea&w=80&h=80" alt="News" class="news-thumb">
+            <div class="news-info">
+              <div class="news-title">MSI 2025 観戦ガイド</div>
+              <div class="news-date">2025年6月17日</div>
+            </div>
+          </li>
+        </ul>
+      </aside>
+    </div>
   </div>
 
-  <script src="script.js"></script>
-  <script>
-    fetch('header.html')
-      .then(res => res.text())
-      .then(html => { document.getElementById('header').innerHTML = html; });
-  </script>
+  <script src="index_firebase.js"></script>
 </body>
 </html>
 <!-- 

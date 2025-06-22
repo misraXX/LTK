@@ -1,110 +1,208 @@
-function doGet(e) {
-    const id = e?.parameter?.id;
-    const data = id ? getEventDetail(id) : getEventList();
-  
-    return ContentService
-      .createTextOutput(JSON.stringify(data))
-      .setMimeType(ContentService.MimeType.JSON);
+/**
+ * Firestore接続設定をデバッグするための関数です。
+ * これを実行してログを確認してください。
+ */
+function debugFirestoreProperties() {
+  const properties = PropertiesService.getScriptProperties();
+  const privateKey = properties.getProperty('PRIVATE_KEY');
+  const clientEmail = properties.getProperty('CLIENT_EMAIL');
+  const projectId = properties.getProperty('PROJECT_ID');
+
+  console.log('--- Firestore Script Properties Debug ---');
+
+  if (privateKey) {
+    console.log('PRIVATE_KEY:');
+    console.log('  - Length: ' + privateKey.length);
+    console.log('  - Starts with: ' + privateKey.substring(0, 35));
+    console.log('  - Ends with: ' + privateKey.substring(privateKey.length - 35));
+  } else {
+    console.log('PRIVATE_KEY が見つかりません。スクリプトプロパティでキーの名前が「PRIVATE_KEY」になっているか確認してください。');
+  }
+
+  if (clientEmail) {
+    console.log('CLIENT_EMAIL: ' + clientEmail);
+  } else {
+    console.log('CLIENT_EMAIL が見つかりません。');
+  }
+
+  if (projectId) {
+    console.log('PROJECT_ID: ' + projectId);
+  } else {
+    console.log('PROJECT_ID が見つかりません。');
   }
   
-  // 📅 一覧（カレンダー）用データ出力
-  function getEventList() {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName("大会日程");
-    const data = sheet.getDataRange().getValues();
-    const rows = data.slice(1);
-  
-    return rows.map(row => ({
-      id: row[0],
-      date: formatDate(row[1]),
-      time: formatTime(row[2]),
-      url: row[3],
-      site: row[4],
-      game: row[5],
-      gameLogo: row[6],
-      tournament: row[7],
-      eventLogo: row[8],
-      title: row[9],
-      match: row[10],
-      teamLogo1: row[11],
-      teamLogo2: row[12],
-      teams: row[13],
-      participants: row[14] ? row[14].toString().split(",").map(s => s.trim()) : [],
-      jpFlag: row[15],
-      participantImages: row[16] ? row[16].toString().split(",").map(s => s.trim()) : []
-    }));
+  console.log('--- Attempting to use the key ---');
+  try {
+    const keyToTest = properties.getProperty('PRIVATE_KEY').replace(/\\n/g, '\n');
+    Utilities.computeRsaSha256Signature("test data", keyToTest);
+    console.log('SUCCESS: The private key was used successfully to sign test data.');
+  } catch (e) {
+    console.error('FAILURE: The private key is invalid. The test signature failed.');
+    console.error(e);
+  }
+  console.log('------------------------------------');
+}
+
+/**
+ * このスクリプトで同期したいシートとFirestoreのコレクション設定
+ */
+const syncConfigs = [
+  {
+    sheetName: 'スクリム結果',
+    collectionName: 'scrim_results',
+    docIdHeader: 'matchId' // ドキュメントIDとして使用する列のヘッダー名
+  },
+  {
+    sheetName: '配信者一覧',
+    collectionName: 'streamers',
+    docIdHeader: '配信者ID'
+  },
+  {
+    sheetName: '大会スケジュール',
+    collectionName: 'events',
+    docIdHeader: 'イベントID'
+  }
+];
+
+
+/**
+ * メイン関数: この関数を実行すると、syncConfigsで定義されたすべてのシートのデータがFirestoreに同期されます。
+ */
+function syncAllSheetsToFirestore() {
+  const firestore = getFirestoreInstance();
+  if (!firestore) {
+    console.error("Firestoreインスタンスの取得に失敗したため、処理を中断します。");
+    return;
   }
   
+  console.log(`全 ${syncConfigs.length} 件の同期処理を開始します...`);
+
+  syncConfigs.forEach(config => {
+    syncSheet(firestore, config.sheetName, config.collectionName, config.docIdHeader);
+  });
+
+  console.log("すべての同期処理が完了しました。");
+}
+
+
+/**
+ * 1つのシートから対応するコレクションへデータを同期する汎用関数
+ * @param {object} firestore - Firestoreのインスタンス
+ * @param {string} sheetName - データを読み込むシート名
+ * @param {string} collectionName - 書き込み先のコレクション名
+ * @param {string} docIdHeader - ドキュメントIDとして使用する列のヘッダー名
+ */
+function syncSheet(firestore, sheetName, collectionName, docIdHeader) {
+  console.log(`--- [開始] シート: "${sheetName}" -> コレクション: "${collectionName}" ---`);
   
-  // 📄 詳細ページ用データ出力
-  function getEventDetail(eventId) {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const eventSheet = ss.getSheetByName("イベント詳細");
-    const eventValues = eventSheet.getDataRange().getValues();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet) {
+    console.error(`  [エラー] シート「${sheetName}」が見つかりません。このシートの同期はスキップされます。`);
+    return;
+  }
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) {
+    console.log(`  [情報] シート「${sheetName}」にはヘッダー以外のデータがないため、スキップします。`);
+    return;
+  }
   
-    // イベント行の取得
-    const eventRow = eventValues.find((row, i) => i > 0 && row[0] == eventId);
-    if (!eventRow) return { error: "Event not found" };
+  const headers = data.shift();
+  const docIdIndex = headers.indexOf(docIdHeader);
+
+  if (docIdIndex === -1) {
+    console.error(`  [エラー] シート「${sheetName}」に、指定されたID列「${docIdHeader}」が見つかりません。このシートの同期はスキップされます。`);
+    return;
+  }
+
+  console.log(`  ${data.length}件のデータを同期します...`);
+
+  data.forEach((row, rowIndex) => {
+    const docId = row[docIdIndex];
+    if (!docId) {
+      console.warn(`  [警告] ${rowIndex + 2}行目: IDが空のためスキップしました。`);
+      return;
+    }
+
+    const docData = {};
+    headers.forEach((header, index) => {
+      if (header) {
+        // 全ての値を文字列として登録（必要に応じて数値変換のロジックを後で追加）
+        docData[header] = String(row[index]);
+      }
+    });
+
+    try {
+      firestore.set(collectionName, String(docId), docData);
+    } catch (e) {
+      console.error(`  [失敗] ${rowIndex + 2}行目 (${docId}) の書き込み中にエラー: ${e.toString()}`);
+    }
+  });
+
+  console.log(`--- [完了] シート: "${sheetName}" -> コレクション: "${collectionName}" ---`);
+}
+
+
+// --- Firestore操作のためのヘルパー関数群 (ここから下は変更不要) ---
+
+const getFirestoreInstance = () => {
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const privateKey = properties.getProperty('PRIVATE_KEY').replace(/\\n/g, '\n');
+    const clientEmail = properties.getProperty('CLIENT_EMAIL');
+    const projectId = properties.getProperty('PROJECT_ID');
+    
+    if (!privateKey || !clientEmail || !projectId) {
+      throw new Error('スクリプトプロパティ (PRIVATE_KEY, CLIENT_EMAIL, PROJECT_ID) が設定されていません。');
+    }
+    
+    const firestore = new Firestore(projectId, privateKey, clientEmail);
+    return firestore;
+  } catch (e) {
+    console.error('Firestoreインスタンスの取得に失敗しました。スクリプトプロパティを確認してください。', e);
+    return null;
+  }
+};
+
+class Firestore {
+  constructor(projectId, privateKey, clientEmail) {
+    this.projectId = projectId;
+    this.token = this.getAccessToken(privateKey, clientEmail);
+    this.baseUrl = `https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/(default)/documents`;
+  }
   
-    const eventObj = {
-      eventId: eventId,
-      title: eventRow[1],
-      tweet: eventRow[2],
-      mainStream: eventRow[3],
-      subStream: eventRow[4],
-      teams: []
+  getAccessToken(privateKey, clientEmail) {
+    const header = { alg: 'RS256', typ: 'JWT' };
+    const now = Math.floor(Date.now() / 1000);
+    const claim = { iss: clientEmail, sub: clientEmail, aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 3600, scope: 'https://www.googleapis.com/auth/datastore' };
+    const signatureBase = Utilities.base64EncodeWebSafe(JSON.stringify(header)) + '.' + Utilities.base64EncodeWebSafe(JSON.stringify(claim));
+    const signature = Utilities.computeRsaSha256Signature(signatureBase, privateKey);
+    const jwt = signatureBase + '.' + Utilities.base64EncodeWebSafe(signature);
+    const response = UrlFetchApp.fetch('https://oauth2.googleapis.com/token', { method: 'post', contentType: 'application/x-www-form-urlencoded', payload: { grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt } });
+    return JSON.parse(response.getContentText()).access_token;
+  }
+  
+  set(collectionName, docId, data) {
+    const firestoreFields = {};
+    for (const key in data) {
+      const value = data[key];
+      if (typeof value === 'number') {
+        firestoreFields[key] = { doubleValue: value };
+      } else if (typeof value === 'string') {
+        firestoreFields[key] = { stringValue: value };
+      } else {
+        firestoreFields[key] = { stringValue: String(value) };
+      }
+    }
+    
+    const url = `${this.baseUrl}/${collectionName}/${docId}`;
+    const options = {
+      method: 'patch',
+      headers: { 'Authorization': `Bearer ${this.token}` },
+      contentType: 'application/json',
+      payload: JSON.stringify({ fields: firestoreFields })
     };
-  
-    // チーム情報の読み取り（F〜J列 = index 5〜9）
-    const teamCells = eventRow.slice(5, 10); // 5列（最大チーム数）
-  
-    for (const cell of teamCells) {
-      if (!cell) continue;
-  
-      const parts = cell.split("|");
-      const teamName = parts[0]?.trim();
-      if (!teamName) continue;
-  
-      const members = parts.slice(1).map(m => {
-        const [name, icon, x, youtube, twitch] = m.split(",");
-        return {
-          name: name?.trim() || "",
-          icon: icon?.trim() || "",
-          x: x?.trim() || "",
-          youtube: youtube?.trim() || "",
-          twitch: twitch?.trim() || ""
-        };
-      });
-  
-      eventObj.teams.push({
-        name: teamName,
-        members
-      });
-    }
-  
-    return eventObj;
+    
+    UrlFetchApp.fetch(url, options);
   }
-  
-  
-  // 📅 日付を yyyy-MM-dd に整形
-  function formatDate(value) {
-    if (Object.prototype.toString.call(value) === "[object Date]") {
-      return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
-    } else if (typeof value === "string") {
-      return value;
-    }
-    return "";
-  }
-  
-  // 🕒 時刻を HH:mm:ss に整形
-  function formatTime(value) {
-    if (Object.prototype.toString.call(value) === "[object Date]") {
-      return Utilities.formatDate(value, Session.getScriptTimeZone(), "HH:mm:ss");
-    } else if (typeof value === "number") {
-      // スプレッドシートの時刻シリアル値対応
-      return Utilities.formatDate(new Date(Math.round((value - 25569) * 86400 * 1000)), Session.getScriptTimeZone(), "HH:mm:ss");
-    } else if (typeof value === "string") {
-      return value;
-    }
-    return "";
-  }
+}

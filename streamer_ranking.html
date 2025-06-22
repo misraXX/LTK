@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ストリーマー統計ランキング</title>
+    <style>
+        body { background: #222; color: #eee; font-family: 'Meiryo', sans-serif; margin: 0; padding: 16px; }
+        .ranking-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+            width: 100%;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        .ranking-section {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .ranking-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #4e7cff;
+            text-align: center;
+        }
+        .cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .card {
+            background: #333;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .rank {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #888;
+            min-width: 25px;
+        }
+        .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #fff;
+        }
+        .player-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #4e7cff;
+        }
+        #loading { text-align: center; font-size: 1.5em; padding: 50px; }
+    </style>
+</head>
+<body>
+    <div id="loading">ランキングを読み込み中...</div>
+    <div class="ranking-sections" style="display:none;">
+        <div class="ranking-section">
+            <div class="ranking-title">K/D ランキング</div>
+            <div class="cards-container" id="kd-cards"></div>
+        </div>
+        <div class="ranking-section">
+            <div class="ranking-title">KDA ランキング</div>
+            <div class="cards-container" id="kda-cards"></div>
+        </div>
+        <div class="ranking-section">
+            <div class="ranking-title">分間ダメージ(DPM)</div>
+            <div class="cards-container" id="dpm-cards"></div>
+        </div>
+        <div class="ranking-section">
+            <div class="ranking-title">分間ゴールド(GPM)</div>
+            <div class="cards-container" id="gpm-cards"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA857XevxRvjeU-Aqs4hvi8nlX_yI8jAqI",
+            authDomain: "ltksite-4d7be.firebaseapp.com",
+            projectId: "ltksite-4d7be",
+            storageBucket: "ltksite-4d7be.firebasestorage.app",
+            messagingSenderId: "443176731258",
+            appId: "1:443176731258:web:a4461c8806c2dd416bf1c3",
+            measurementId: "G-V34GZVJZRY"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 配信者アイコンURLを保持するオブジェクト
+        let streamerIcons = {};
+
+        /**
+         * 最初に全ての配信者情報を取得してアイコンURLをマップに保存する
+         */
+        async function fetchStreamerIcons() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "streamers"));
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const memberName = data.メンバー名;
+                    const iconUrl = data.アイコン;
+                    if (memberName && iconUrl) {
+                        // キーとして「メンバー名」フィールドの値を使う
+                        streamerIcons[memberName] = iconUrl;
+                    }
+                });
+                console.log("Streamer icons fetched:", streamerIcons);
+            } catch (error) {
+                console.error("Error fetching streamer icons:", error);
+            }
+        }
+
+        /**
+         * 指定されたランキングを描画する関数
+         * @param {string} orderByField - 並べ替えの基準 (例: 'KDA')
+         * @param {string} containerId - 描画先の<div>要素のID
+         * @param {number} decimalPlaces - 小数点以下の表示桁数
+         */
+        async function renderRanking(orderByField, containerId, decimalPlaces = 1) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+
+            try {
+                const q = query(collection(db, "streamer_stats"), orderBy(orderByField, "desc"), limit(20));
+                const querySnapshot = await getDocs(q);
+                
+                let rank = 1;
+                querySnapshot.forEach(doc => {
+                    const player = doc.data();
+                    const statValue = (player[orderByField] || 0).toFixed(decimalPlaces);
+                    // player.streamerId（メンバー名と同じ値のはず）をキーにしてアイコンを探す
+                    const iconUrl = streamerIcons[player.streamerId] || 'https://placehold.co/100x100';
+
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div class="rank">${rank++}.</div>
+                        <img class="icon" src="${iconUrl}" alt="${player.streamerName}" onerror="this.onerror=null;this.src='https://placehold.co/100x100';">
+                        <div class="player-name">${player.streamerName}</div>
+                        <div class="stat-value">${statValue}</div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error(`Error rendering ranking for ${orderByField}:`, error);
+                container.innerHTML = `<p style="color:red;">ランキングの読み込みに失敗しました。</p>`;
+            }
+        }
+
+        async function loadAllRankings() {
+            // まずアイコン情報を取得
+            await fetchStreamerIcons();
+            
+            // 全てのランキング描画を並行して実行
+            await Promise.all([
+                renderRanking('KD', 'kd-cards', 1),
+                renderRanking('KDA', 'kda-cards', 1),
+                renderRanking('DPM', 'dpm-cards', 0),
+                renderRanking('GPM', 'gpm-cards', 0)
+            ]);
+
+            // 読み込み完了後、ローディング表示を消してランキングを表示
+            document.getElementById('loading').style.display = 'none';
+            document.querySelector('.ranking-sections').style.display = 'grid';
+        }
+
+        loadAllRankings();
+    </script>
+</body>
+</html> 

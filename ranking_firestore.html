@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>チャンピオンランキング from Firestore</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; color: #1c1e21; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; color: #1877f2; }
+        .rankings-wrapper { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; }
+        .ranking-box { background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; width: 400px; }
+        .ranking-box h2 { margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        #loading { text-align: center; font-size: 1.2em; padding: 40px; }
+        ul { list-style-type: none; padding: 0; }
+        li { display: flex; align-items: center; margin-bottom: 15px; font-size: 1.1em; }
+        .rank { font-weight: bold; width: 30px; font-size: 1.2em; color: #606770; }
+        .icon { width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; }
+        .name { flex-grow: 1; font-weight: 600; }
+        .stat { font-weight: bold; color: #1877f2; }
+        .sub-stat { font-size: 0.8em; color: #606770; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>チャンピオンランキング</h1>
+        <div id="loading">読み込み中...</div>
+        <div class="rankings-wrapper">
+            <div class="ranking-box">
+                <h2>勝率ランキング (総合)</h2>
+                <ul id="win-rate-ranking"></ul>
+            </div>
+            <div class="ranking-box">
+                <h2>ピック数ランキング (総合)</h2>
+                <ul id="picks-ranking"></ul>
+            </div>
+            <div class="ranking-box">
+                <h2>勝率ランキング (CORE)</h2>
+                <ul id="core-win-rate-ranking"></ul>
+            </div>
+            <div class="ranking-box">
+                <h2>ピック数ランキング (CORE)</h2>
+                <ul id="core-picks-ranking"></ul>
+            </div>
+            <div class="ranking-box">
+                <h2>勝率ランキング (NEXT)</h2>
+                <ul id="next-win-rate-ranking"></ul>
+            </div>
+            <div class="ranking-box">
+                <h2>ピック数ランキング (NEXT)</h2>
+                <ul id="next-picks-ranking"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA857XevxRvjeU-Aqs4hvi8nlX_yI8jAqI",
+            authDomain: "ltksite-4d7be.firebaseapp.com",
+            projectId: "ltksite-4d7be",
+            storageBucket: "ltksite-4d7be.firebasestorage.app",
+            messagingSenderId: "443176731258",
+            appId: "1:443176731258:web:a4461c8806c2dd416bf1c3",
+            measurementId: "G-V34GZVJZRY"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        console.log("Firebase Initialized Successfully.");
+
+        /**
+         * 指定されたランキングを描画する関数
+         * @param {string} orderByField - 並べ替えの基準
+         * @param {string} targetElementId - 描画先の<ul>要素のID
+         */
+        async function renderRanking(orderByField, targetElementId) {
+            console.log(`[renderRanking] Start: orderBy=${orderByField}, target=${targetElementId}`);
+            const listElement = document.getElementById(targetElementId);
+            if (!listElement) {
+                console.error(`[renderRanking] Error: Target element #${targetElementId} not found.`);
+                return;
+            }
+            listElement.innerHTML = ''; // 描画前にクリア
+
+            const championsRef = collection(db, "champions");
+            
+            try {
+                let championsToRender = [];
+
+                if (orderByField.includes('winRate')) {
+                    // 勝率ランキングの場合：3pick以上でフィルタし、クライアント側でソート
+                    let picksField = 'overall_picks';
+                    if (orderByField.startsWith('core')) {
+                        picksField = 'core_picks';
+                    } else if (orderByField.startsWith('next')) {
+                        picksField = 'next_picks';
+                    }
+                    
+                    const q = query(championsRef, where(picksField, ">=", 3));
+                    const querySnapshot = await getDocs(q);
+                    
+                    let champions = [];
+                    querySnapshot.forEach(doc => champions.push(doc.data()));
+                    
+                    // 勝率で降順ソート
+                    champions.sort((a, b) => (b[orderByField] || 0) - (a[orderByField] || 0));
+                    
+                    championsToRender = champions.slice(0, 10);
+                    console.log(`[renderRanking] Client-side sort for ${orderByField} complete. Rendering top ${championsToRender.length}.`);
+
+                } else {
+                    // ピック数ランキングの場合：Firestoreでソートして取得
+                    const q = query(championsRef, orderBy(orderByField, "desc"), limit(10));
+                    const querySnapshot = await getDocs(q);
+                    querySnapshot.forEach(doc => championsToRender.push(doc.data()));
+                    console.log(`[renderRanking] Firestore query for ${orderByField} complete. Rendering ${championsToRender.length}.`);
+                }
+
+                if (championsToRender.length === 0) {
+                    listElement.innerHTML = '<li>対象となるチャンピオンがいません。</li>';
+                    return;
+                }
+
+                let rank = 1;
+                championsToRender.forEach((champion) => {
+                    // orderByFieldに基づいて使用する統計情報のプレフィックスを決定
+                    let statPrefix = 'overall';
+                    if (orderByField.startsWith('core')) {
+                        statPrefix = 'core';
+                    } else if (orderByField.startsWith('next')) {
+                        statPrefix = 'next';
+                    }
+
+                    const winRateField = `${statPrefix}_winRate`;
+                    const picksField = `${statPrefix}_picks`;
+
+                    const isWinRate = orderByField.includes('winRate');
+
+                    // メインの統計情報とサブの統計情報を設定
+                    const statValue = isWinRate
+                        ? ((champion[winRateField] || 0) * 100).toFixed(1) + '%'
+                        : champion[picksField] || 0;
+
+                    const subStatValue = isWinRate
+                        ? `(Pick: ${champion[picksField] || 0})`
+                        : `(Win: ${((champion[winRateField] || 0) * 100).toFixed(1)}%)`;
+
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <div class="rank">${rank++}.</div>
+                        <img class="icon" src="${champion.iconUrl}" alt="${champion.championName}" onerror="this.style.display='none'">
+                        <div class="name">${champion.championName}</div>
+                        <div class="stat">${statValue} <span class="sub-stat">${subStatValue}</span></div>
+                    `;
+                    listElement.appendChild(listItem);
+                });
+
+            } catch (error) {
+                console.error(`[renderRanking] Error fetching data for ${orderByField}:`, error);
+                listElement.innerHTML = '<li>データの読み込みに失敗しました。</li>';
+            }
+        }
+
+        async function loadAllRankings() {
+            console.log("[loadAllRankings] Start loading all rankings.");
+            try {
+                await Promise.all([
+                    renderRanking("overall_winRate", "win-rate-ranking"),
+                    renderRanking("overall_picks", "picks-ranking"),
+                    renderRanking("core_winRate", "core-win-rate-ranking"),
+                    renderRanking("core_picks", "core-picks-ranking"),
+                    renderRanking("next_winRate", "next-win-rate-ranking"),
+                    renderRanking("next_picks", "next-picks-ranking")
+                ]);
+                console.log("[loadAllRankings] All rankings loaded successfully.");
+                document.getElementById('loading').style.display = 'none';
+            } catch (error) {
+                console.error("ランキングの読み込みに失敗しました: ", error);
+                document.getElementById('loading').innerText = 'ランキングの読み込みに失敗しました。';
+            }
+        }
+
+        console.log("Script loaded. Starting the process...");
+        loadAllRankings();
+    </script>
+</body>
+</html> 

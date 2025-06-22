@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>チャンピオンランキング - LTK</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; }
+        #rankings-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .ranking-box { border: 1px solid #ddd; border-radius: 5px; padding: 15px; }
+        .ranking-box h2 { margin-top: 0; }
+        #loading { text-align: center; font-size: 1.2em; padding: 40px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>チャンピオンランキング</h1>
+        <div id="loading">読み込み中...</div>
+        <div id="rankings-container">
+            <!-- ランキングはここに動的に生成されます -->
+        </div>
+    </div>
+
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        // --- ここにFirebaseコンソールからコピーしたfirebaseConfigを貼り付けてください ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyA857XevxRvjeU-Aqs4hvi8nlX_yI8jAqI",
+            authDomain: "ltksite-4d7be.firebaseapp.com",
+            projectId: "ltksite-4d7be",
+            storageBucket: "ltksite-4d7be.firebasestorage.app",
+            messagingSenderId: "443176731258",
+            appId: "1:443176731258:web:a4461c8806c2dd416bf1c3",
+            measurementId: "G-V34GZVJZRY"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        console.log("Firebase Initialized!");
+
+        // --- ここからがランキング表示のためのコードです ---
+
+        const rankingsContainer = document.getElementById('rankings-container');
+        const loadingIndicator = document.getElementById('loading');
+
+        // 表示したいランキングの種類を定義
+        const rankingTypes = [
+            { id: 'overall_picks', title: '総合ピック数', unit: '' },
+            { id: 'overall_winRate', title: '総合勝率', unit: '%' },
+            { id: 'core_picks', title: 'COREピック数', unit: '' },
+            { id: 'core_winRate', title: 'CORE勝率', unit: '%' },
+            { id: 'next_picks', title: 'NEXTピック数', unit: '' },
+            { id: 'next_winRate', title: 'NEXT勝率', unit: '%' },
+        ];
+
+        /**
+         * 指定されたランキングをFirestoreから取得して表示する関数
+         * @param {string} orderByField - 並べ替えの基準となるフィールド名
+         * @param {string} title - ランキングのタイトル
+         * @param {string} unit - 統計値の単位
+         */
+        async function fetchAndDisplayRanking(orderByField, title, unit) {
+            const rankingBox = document.createElement('div');
+            rankingBox.className = 'ranking-box';
+            rankingBox.innerHTML = `<h2>${title}</h2>`;
+            const listElement = document.createElement('ul');
+            listElement.style.listStyleType = 'none';
+            listElement.style.paddingLeft = '0';
+            rankingBox.appendChild(listElement);
+            rankingsContainer.appendChild(rankingBox);
+
+            try {
+                const q = query(
+                    collection(db, 'champions'),
+                    orderBy(orderByField, 'desc'),
+                    limit(10)
+                );
+                
+                const querySnapshot = await getDocs(q);
+
+                querySnapshot.forEach(doc => {
+                    const champion = doc.data();
+                    const isWinRate = orderByField.includes('winRate');
+                    
+                    // メインの統計値
+                    let statValue = champion[orderByField];
+                    if (isWinRate) {
+                        statValue = (statValue * 100).toFixed(0) + unit;
+                    }
+
+                    // 補足の統計値 (ピック数ランキングなら勝率、勝率ランキングならピック数)
+                    const subStatField = isWinRate ? orderByField.replace('winRate', 'picks') : orderByField.replace('picks', 'winRate');
+                    let subStatValue = champion[subStatField] || 0;
+                     if (!isWinRate) { // 勝率を補足で表示する場合
+                        subStatValue = `(${(subStatValue * 100).toFixed(0)}%)`;
+                    } else { // ピック数を補足で表示する場合
+                        subStatValue = `(${subStatValue} picks)`;
+                    }
+
+                    const listItem = document.createElement('li');
+                    listItem.style.display = 'flex';
+                    listItem.style.alignItems = 'center';
+                    listItem.style.marginBottom = '10px';
+                    listItem.innerHTML = `
+                        <img src="${champion.iconUrl}" alt="${champion.championId}" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
+                        <div style="flex-grow: 1;">
+                            <strong>${champion.championName}</strong>
+                        </div>
+                        <div style="text-align: right;">
+                            <strong>${statValue}</strong>
+                            <small style="color: #666; display: block;">${subStatValue}</small>
+                        </div>
+                    `;
+                    listElement.appendChild(listItem);
+                });
+
+            } catch (error) {
+                console.error(`Error fetching ranking for ${orderByField}:`, error);
+                rankingBox.innerHTML += `<p>データの読み込みに失敗しました。</p>`;
+            }
+        }
+
+        // すべてのランキングを読み込む
+        async function loadAllRankings() {
+            rankingsContainer.innerHTML = ''; // コンテナをクリア
+            
+            const fetchPromises = rankingTypes.map(type => 
+                fetchAndDisplayRanking(type.id, type.title, type.unit)
+            );
+            
+            await Promise.all(fetchPromises);
+            
+            loadingIndicator.style.display = 'none'; // 読み込み完了
+        }
+
+        loadAllRankings();
+
+    </script>
+</body>
+</html>

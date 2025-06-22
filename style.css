@@ -1,8 +1,16 @@
 body {
   font-family: 'Helvetica Neue', Arial, sans-serif;
-  background: #111;
-  color: #fff;
+  background-color: #121212;
+  color: #e0e0e0;
   margin: 0;
+  padding: 0;
+}
+
+.main-container { /* 新しいコンテナ */
+  max-width: 1920px; /* 必要に応じて調整 */
+  margin: 0 auto;
+  padding: 0 10px; /* 左右の最小限の余白 */
+  box-sizing: border-box;
 }
 
 header {
@@ -54,11 +62,11 @@ nav a:hover {
 }
 
 .main-layout {
-  display: flex;
-  max-width: 1400px;
-  margin: 30px auto 0 auto;
-  gap: 32px;
-  min-height: 80vh;
+  display: grid;
+  grid-template-columns: 200px 1fr 250px;
+  gap: 10px; /* 隙間を狭く */
+  padding: 20px 0; /* 上下の余白のみ */
+  width: 100%;
 }
 
 .sidebar {
@@ -146,13 +154,9 @@ nav a:hover {
 }
 
 .content {
-  flex: 2 1 0;
-  min-width: 0;
-  background: #181818;
-  border-radius: 12px;
-  padding: 32px 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-  max-width: 800px;
+  background: #1e1e1e;
+  padding: 20px;
+  border-radius: 8px;
 }
 
 #calendar {
@@ -160,8 +164,9 @@ nav a:hover {
   border-radius: 10px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-  max-width: 800px;
   margin: 0 auto;
+  width: 100%;
+  height: 100vh; /* ビューポートの高さに基づいて高さを設定 */
 }
 
 .newsbar {
@@ -280,7 +285,10 @@ nav a:hover {
 
 /* イベントのスタイル */
 .fc-event-main-content {
-  padding: 4px;
+  display: flex; /* Flexboxを有効化 */
+  flex-direction: column; /* 子要素を縦方向に並べる */
+  padding: 2px 4px; /* カード内の余白を調整 */
+  line-height: 1.4; /* 行の高さを調整 */
 }
 
 /* index.html 用イベントタイトル */
@@ -302,9 +310,9 @@ nav a:hover {
 }
 
 .event-time {
+  color: #888;
   font-size: 0.9em;
-  color: #666;
-  margin-bottom: 2px;
+  margin-left: 6px;
 }
 
 .event-site {
@@ -314,48 +322,45 @@ nav a:hover {
 
 /* スタッツランキング */
 .statsbar {
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
+
 .statsbar-title {
   font-size: 1.1rem;
   font-weight: bold;
-  margin-bottom: 12px;
+  margin-bottom: 15px;
+  color: #e0e0e0;
 }
-.stats-list {
-  list-style: none;
+
+.ranking-list {
+  list-style: none; /* 箇条書きの・を削除 */
   padding: 0;
   margin: 0;
-}
-.stats-list li {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-  background: #222;
+  flex-direction: column;
+  gap: 12px; /* 各項目の間隔 */
+}
+
+.ranking-list li {
+  display: flex;
+  align-items: center; /* アイコンとテキストを上下中央に揃える */
+  background-color: #2a2a2a;
+  padding: 8px;
   border-radius: 8px;
-  padding: 6px 10px;
 }
-.stats-rank {
-  font-size: 1.1em;
-  font-weight: bold;
-  color: #00bfff;
-  width: 1.5em;
-  text-align: center;
-}
+
 .stats-thumb {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%; /* アイコンを円形に */
   object-fit: cover;
+  margin-right: 12px; /* アイコンとテキストの間隔 */
 }
-.stats-name {
-  flex: 1;
-  font-weight: 500;
-  color: #fff;
-}
+
 .stats-value {
-  font-size: 0.95em;
-  color: #aaa;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e0e0e0;
 }
 
 /* FullCalendar 曜日ヘッダーを黒文字に */
@@ -367,149 +372,290 @@ nav a:hover {
 
 /* detail.html 用スタイル */
 .detail-main {
-  background: #f5f5f5;
-  min-height: 100vh;
-  padding: 40px 0;
+  padding: 20px;
+  max-width: 1200px; /* 900pxから1200pxに変更 */
+  margin: 20px auto;
 }
+
 .event-detail-card {
-  max-width: 1500px;
-  margin: 0 auto;
-  background: none;
-  box-shadow: none;
+  position: relative; /* 子要素を絶対配置するための基準 */
+  background-color: #f0f2f5;
+  padding: 25px;
+  padding-bottom: 50px; /* 日付・時刻のスペース確保 */
+  border-radius: 12px;
+  margin-bottom: 30px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-.event-teams-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 32px;
+
+.event-detail-card h1 {
+  color: #1c1e21; /* Black */
+  margin: 0 0 15px 0; /* 下の余白を調整 */
+  font-size: 2.5rem;
+  white-space: pre-line; /* 改行を反映させる */
+}
+
+.event-streams {
+  margin-bottom: 20px; /* 日付との余白 */
+  display: flex;
+  align-items: center; /* 垂直方向の中央揃え */
   justify-content: center;
-  margin-bottom: 32px;
+  gap: 15px;
+  color: #606770;
 }
-.team-card {
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-  padding: 28px 32px 24px 32px;
-  min-width: 700px;
-  max-width: 1000px;
+
+.event-streams a {
+    display: inline-flex; /* aタグもflexアイテムとして扱う */
+    align-items: center;
+}
+
+.event-streams .sns-icon {
+    width: 28px;
+    height: 28px;
+}
+
+.event-meta {
+  position: absolute; /* 左下に配置 */
+  bottom: 15px;
+  left: 25px;
+  display: flex;
+  align-items: center; /* 要素の高さを中央で揃える */
+  gap: 10px;
+  font-size: 1rem;
+  color: #606770;
+  line-height: 1; /* 行の高さをリセットして揃える */
+}
+
+#event-date, #event-time {
+    vertical-align: middle;
+}
+
+/* --- Teams & Members --- */
+#teams-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 30px;
 }
-.team-title {
-  font-size: 1.5rem;
+
+.team-card {
+  background-color: #1e1e1e;
+  padding: 25px;
+  border-radius: 12px;
+}
+
+.team-header {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 15px;
+}
+
+.team-members-container {
+  position: relative;
+  padding-top: 15px; /* カテゴリタグのスペースを確保 */
+}
+
+.team-members-container:not(:last-child) {
+  margin-bottom: 30px; /* COREとNEXTのセクション間の余白 */
+}
+
+.team-category {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-block;
+  color: #e0e0e0;
+  padding: 5px 0;
+  border-radius: 0;
+  font-size: 0.9rem;
   font-weight: bold;
-  margin-bottom: 18px;
-  text-align: center;
-  color: #111;
+  text-transform: uppercase;
 }
+
+.team-title {
+  color: #fff;
+  font-size: 2rem;
+  margin: 0;
+}
+
 .team-members {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 24px;
-  justify-items: center;
-  width: 100%;
+  /* 6列で表示するように固定 */
+  grid-template-columns: repeat(6, 1fr);
+  gap: 25px;
 }
+
 .member-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 100px;
-  max-width: 130px;
-}
-.member-icon-wrap {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: #eee;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 8px;
-  overflow: hidden;
-}
-.member-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: #fff;
-}
-.no-image {
-  width: 64px;
-  height: 64px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #bbb;
-  font-size: 0.85em;
-  background: #f3f3f3;
-  border-radius: 50%;
-}
-.no-image-icon {
-  font-size: 1.3em;
-}
-.no-image-text {
-  font-size: 0.8em;
-}
-.member-name {
-  font-weight: 600;
-  color: #222;
-  margin-bottom: 4px;
   text-align: center;
-  max-width: 100px;
-  font-size: clamp(0.8rem, 1.2vw, 1.1rem);
-  word-break: break-word;
 }
+
+.member-icon-wrap {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 15px;
+    background-color: #333;
+}
+
+.member-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.member-name {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #e0e0e0;
+  margin-bottom: 5px; /* 下の余白を調整 */
+}
+
+.member-role {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-bottom: 12px;
+}
+
 .member-sns {
   display: flex;
-  gap: 6px;
-  justify-content: center;
-  margin-bottom: 2px;
+  gap: 15px;
 }
+
 .sns-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  background: #f5f5f5;
-  transition: background 0.2s;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  transition: opacity 0.2s;
 }
+
 .sns-icon:hover {
-  background: #e0e0e0;
+  opacity: 0.7;
 }
-.x-icon svg {
-  width: 20px;
-  height: 20px;
-}
-.twitch-icon img, .youtube-icon img {
-  width: 20px;
-  height: 20px;
-  border-radius: 3px;
-}
-.event-streams {
-  text-align: center;
-  margin-bottom: 18px;
-}
-.event-streams a {
-  display: inline-block;
-  margin: 0 10px;
-  color: #fff;
-  background: #00bfff;
-  padding: 6px 18px;
-  border-radius: 6px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background 0.2s;
-}
-.event-streams a:hover {
-  background: #0099cc;
-}
+
 .event-tweet {
-  margin-top: 18px;
-  text-align: center;
-  color: #333;
-  font-size: 1.1em;
+  margin-top: 40px;
+}
+
+/* --- カレンダーのサイズ調整（文字サイズは元に戻し、セルの高さのみ維持） --- */
+.fc .fc-daygrid-day-frame {
+  min-height: 120px; /* 各日付セルの最低の高さを設定 */
+}
+
+.event-line-1, .event-match, .event-time {
+  white-space: nowrap; /* テキストが折り返さないように */
+  overflow: hidden;
+  text-overflow: ellipsis; /* はみ出したテキストは...で表示 */
+}
+
+.event-match, .event-time {
+  font-size: 0.9em;
+}
+
+.event-abbr {
+  font-weight: bold;
+}
+
+/* --- イベントカードの新しいスタイル --- */
+
+/* FullCalendarのイベントの枠線をなくし、背景を透過させる */
+.fc .fc-daygrid-event-harness .fc-event {
+  padding: 0 !important;
+  background-color: transparent;
+  border: none;
+}
+
+/* カード全体のコンテナ */
+.event-card-container {
+  background: linear-gradient(145deg, #2e2e2e, #252525);
+  border-left: 4px solid; /* 色はJSで設定 */
+  border-radius: 4px;
+  padding: 5px 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+  margin-bottom: 4px; /* カード間のマージン */
+  overflow: hidden;
+  width: 100%; /* 親要素の幅いっぱいに広げる */
+  box-sizing: border-box; /* paddingを含めて幅を100%にする */
+}
+
+/* 大会略称 */
+.event-abbr {
+  font-size: 0.9em;
+  font-weight: bold;
+  color: #f0f0f0;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* マッチアップと時刻の行 */
+.match-line {
+  display: flex;
+  align-items: center;
+}
+
+/* マッチアップ */
+.event-match {
+  font-size: 0.95em;
+  font-weight: 500;
+  color: #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px; /* チーム間とvsの間の余白 */
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: 4px; /* ロゴとチーム名の間の余白 */
+}
+
+.vs-separator {
+  color: #888;
+  font-weight: bold;
+}
+
+/* チームロゴ */
+.team-logo {
+  height: 16px;
+  width: 16px;
+  vertical-align: middle;
+  object-fit: contain;
+  border-radius: 3px;
+  flex-shrink: 0; /* ロゴが縮まないようにする */
+  background-color: #444; /* 画像が透過の場合の背景 */
+  margin-right: 4px; /* 右側に余白を追加 */
+}
+
+/* 時刻 */
+.event-time {
+  font-size: 0.9em;
+  color: #a0a0a0;
+  font-weight: bold;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* --- FullCalendarのカスタマイズ --- */
+/*
+.fc-day-other {
+  visibility: hidden; 
+}
+*/
+
+/* --- ヘッダーのスタイル --- */
+#header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000; /* 他の要素より手前に表示 */
+  background-color: #1a1a1a; /* 背景色を指定 */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3); /* 影を追加 */
 }

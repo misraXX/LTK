@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>イベント詳細</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="main-container">
+    <div id="header"></div>
+
+    <main class="detail-main">
+      <div class="event-detail-card">
+        <h1 id="event-title"></h1>
+        <div class="event-meta">
+          <span id="event-date"></span>
+          <span id="event-time"></span>
+        </div>
+      </div>
+
+      <div id="teams-container">
+        <!-- 参加チームと選手の情報がここに動的に挿入されます -->
+      </div>
+      
+      <div class="event-tweet" id="event-tweet-container">
+        <!-- イベントツイートがここに埋め込まれます -->
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <script src="event_detail.js"></script>
+  <!-- Twitter Widget -->
+  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+</body>
+</html> 

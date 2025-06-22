@@ -1,0 +1,15 @@
+# Firebase
+ltksite-4d7be-firebase-adminsdk-fbsvc-0e36462393.json
+.firebaserc
+firebase.json
+firestore.indexes.json
+firestore.rules
+functions/node_modules
+functions/package-lock.json
+
+# IDE
+.idea/
+.vscode/
+
+# Other
+_unused/ 
