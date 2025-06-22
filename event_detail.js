@@ -1,16 +1,10 @@
 // Firebaseの初期化
-const firebaseConfig = {
-    apiKey: "AIzaSyA857XevxRvjeU-Aqs4hvi8nlX_yI8jAqI",
-    authDomain: "ltksite-4d7be.firebaseapp.com",
-    projectId: "ltksite-4d7be",
-    storageBucket: "ltksite-4d7be.firebasestorage.app",
-    messagingSenderId: "443176731258",
-    appId: "1:443176731258:web:a4461c8806c2dd416bf1c3",
-    measurementId: "G-V34GZVJZRY"
-};
-
 if (firebase.apps.length === 0) {
-    firebase.initializeApp(firebaseConfig);
+    // Firebase Hostingの予約済みURLから設定を読み込んで初期化
+    fetch('/__/firebase/init.json').then(async response => {
+      await response.json();
+      firebase.initializeApp(response.json());
+    });
 }
 const db = firebase.firestore();
 
