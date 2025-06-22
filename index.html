@@ -2,107 +2,23 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>イベント情報サイト</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- FullCalendarのライブラリ -->
-  <script src='https://cdn.jsdelivr.net/npm/fullcalendar/index.global.min.js'></script>
-
-  <!-- Firebase App (Core) - 互換版（compat）を読み込む -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <!-- Firestore - 互換版（compat）を読み込む -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-  <!-- Firebase Hostingが提供する、Firebase設定用のスクリプト -->
-  <script src="/__/firebase/init.js"></script>
-
+  <title>サイト移転のお知らせ</title>
+  <!-- 0秒後に新しいURLへリダイレクト -->
+  <meta http-equiv="refresh" content="0; url=https://ltksite-4d7be.web.app/index.html">
+  <link rel="canonical" href="https://ltksite-4d7be.web.app/index.html">
   <style>
-    /* カレンダーイベントのカスタムスタイル */
-    .fc-event-main-content {
-        padding: 4px;
-        line-height: 1.4;
-    }
-    .event-title {
-        font-weight: bold;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .event-time, .event-site {
-        font-size: 0.9em;
-        color: #ddd;
-    }
-    .calendar-note {
-        font-size: 0.9em;
-        color: #888;
-        margin-top: 12px;
-        text-align: center;
-    }
+    body { font-family: sans-serif; text-align: center; padding: 40px; }
+    a { color: #007bff; }
   </style>
 </head>
 <body>
-  <div class="main-container">
-    <div id="header"></div>
-    <div class="main-layout">
-      <!-- 左カラム：フィルター -->
-      <aside class="sidebar">
-        <div class="sidebar-title">大会フィルター</div>
-        <ul class="tournament-list">
-          <li><label><input type="checkbox" value="LTK" checked> LTK</label></li>
-          <li><label><input type="checkbox" value="PCS" checked> PCS</label></li>
-          <li><label><input type="checkbox" value="LJL" checked> LJL</label></li>
-          <li><label><input type="checkbox" value="LCK" checked> LCK</label></li>
-          <!-- ロゴ画像は一旦削除し、シンプルにします -->
-        </ul>
-      </aside>
+  <p>新しいURLに自動的にジャンプします。</p>
+  <p>自動的にジャンプしない場合は、<a href="https://ltksite-4d7be.web.app/index.html">こちらをクリックしてください</a>。</p>
 
-      <!-- 中央カラム：カレンダー -->
-      <main class="content">
-        <section id="home">
-          <div id="calendar"></div>
-          <div class="calendar-note">
-          </div>
-        </section>
-      </main>
-
-      <!-- 右カラム：ニュースとスタッツ -->
-      <aside class="newsbar">
-        <div class="statsbar">
-          <div class="statsbar-title">KDAランキング TOP 3</div>
-          <div class="ranking-list" id="kda-ranking-list">
-            <!-- ここにFirestoreから取得したランキングが表示されます -->
-          </div>
-        </div>
-        <div class="newsbar-title">ニュース</div>
-        <ul class="news-list">
-          <!-- ニュース部分は静的なままにします -->
-          <li>
-            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=facearea&w=80&h=80" alt="News" class="news-thumb">
-            <div class="news-info">
-              <div class="news-title">MSI 2025 観戦ガイド</div>
-              <div class="news-date">2025年6月17日</div>
-            </div>
-          </li>
-        </ul>
-      </aside>
-    </div>
-  </div>
-
-  <script src="index_firebase.js"></script>
+  <!-- JavaScriptによるリダイレクト (保険) -->
+  <script>
+    window.location.replace("https://ltksite-4d7be.web.app/index.html");
+  </script>
 </body>
 </html>
-<!-- 
-LTK特設サイト/index.html
-カレンダーの下に「このカレンダーはGoogleスプレッドシートのデータを元に自動生成されています。データ修正・追加希望は運営までご連絡ください。」という注意書きを小さくグレーで表示してください。
--->
-
-<style>
-  .calendar-note {
-    font-size: 0.9em;
-    color: #888;
-    margin-top: 12px;
-    text-align: center;
-  }
-</style>
-<div class="calendar-note">
 
