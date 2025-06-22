@@ -1,10 +1,8 @@
 // Firebaseの初期化
+// HTMLで読み込まれた /__/firebase/init.js によって自動的に設定されるため、
+// 引数なしで初期化を呼び出す
 if (firebase.apps.length === 0) {
-    // Firebase Hostingの予約済みURLから設定を読み込んで初期化
-    fetch('/__/firebase/init.json').then(async response => {
-      await response.json();
-      firebase.initializeApp(response.json());
-    });
+    firebase.initializeApp();
 }
 const db = firebase.firestore();
 

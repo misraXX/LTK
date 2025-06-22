@@ -8,42 +8,32 @@ var calendar;
 var allEvents = [];
 
 // ページの準備ができたら実行
-document.addEventListener('DOMContentLoaded', async function() {
-    try {
-        // Firebase Hostingから設定を読み込む
-        const response = await fetch('/__/firebase/init.js');
-        if (!response.ok) {
-            console.error('Firebaseの初期化に失敗しました。設定ファイルが読み込めません。');
-            return;
-        }
-        await response.json(); // init.jsを評価
+document.addEventListener('DOMContentLoaded', function() {
+    // ヘッダーを読み込む
+    fetch('header.html')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('header').innerHTML = data;
+            // --- ヘッダー読み込み後に高さを計算して余白を設定 ---
+            const headerEl = document.getElementById('header');
+            const mainContainerEl = document.querySelector('.main-container');
+            if (headerEl && mainContainerEl) {
+                const headerHeight = headerEl.offsetHeight;
+                mainContainerEl.style.paddingTop = headerHeight + 'px';
+            }
+        });
 
-        // ヘッダーを読み込む
-        const headerResponse = await fetch('header.html');
-        const headerData = await headerResponse.text();
-        document.getElementById('header').innerHTML = headerData;
+    // HTMLで読み込まれた /__/firebase/init.js によって自動的に設定されるため、
+    // 引数なしで初期化を呼び出す
+    if (firebase.apps.length === 0) {
+        firebase.initializeApp();
+    }
+    db = firebase.firestore();
 
-        // --- ヘッダー読み込み後に高さを計算して余白を設定 ---
-        const headerEl = document.getElementById('header');
-        const mainContainerEl = document.querySelector('.main-container');
-        if (headerEl && mainContainerEl) {
-            const headerHeight = headerEl.offsetHeight;
-            mainContainerEl.style.paddingTop = headerHeight + 'px';
-        }
-
-        // Firebase初期化（未初期化の場合のみ）
-        if (firebase.apps.length === 0) {
-            firebase.initializeApp(); // 引数なしで初期化
-        }
-        db = firebase.firestore();
-
-        // カレンダー初期化
-        var calendarEl = document.getElementById('calendar');
-        if (calendarEl) {
-            initializeCalendarAndLoadData(calendarEl);
-        }
-    } catch (error) {
-        console.error('初期化プロセスでエラーが発生しました:', error);
+    // カレンダー初期化
+    var calendarEl = document.getElementById('calendar');
+    if (calendarEl) {
+        initializeCalendarAndLoadData(calendarEl);
     }
 });
 
