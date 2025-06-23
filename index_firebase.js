@@ -15,11 +15,21 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             document.getElementById('header').innerHTML = data;
             // --- ヘッダー読み込み後に高さを計算して余白を設定 ---
-            const headerEl = document.getElementById('header');
+            const headerContainer = document.getElementById('header');
+            const headerEl = headerContainer.querySelector('header'); // コンテナ内のheader要素を取得
             const mainContainerEl = document.querySelector('.main-container');
             if (headerEl && mainContainerEl) {
                 const headerHeight = headerEl.offsetHeight;
                 mainContainerEl.style.paddingTop = headerHeight + 'px';
+            }
+
+            const menuToggle = document.querySelector('.menu-toggle');
+            const navUl = document.querySelector('nav ul');
+
+            if (menuToggle && navUl) {
+                menuToggle.addEventListener('click', () => {
+                    navUl.classList.toggle('nav-open');
+                });
             }
         });
 
@@ -52,8 +62,10 @@ function initializeCalendarAndLoadData(calendarEl) {
 
 // カレンダーを初期化する関数
 function initializeCalendar(calendarEl) {
+    const initialView = window.innerWidth <= 768 ? 'listWeek' : 'dayGridMonth';
+
     calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
+        initialView: initialView,
         locale: 'ja',
         fixedWeekCount: false,
         height: 'auto',
@@ -89,7 +101,7 @@ function initializeCalendar(calendarEl) {
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
-            right: ''
+            right: 'dayGridMonth,listWeek'
         },
         eventClick: function(info) {
             info.jsEvent.preventDefault();
@@ -108,6 +120,29 @@ function initializeCalendar(calendarEl) {
         },
         eventContent: function(arg) {
             try {
+                // --- listWeekビューの場合、シンプルなDOMを生成 ---
+                if (arg.view.type === 'listWeek') {
+                    const props = arg.event.extendedProps;
+                    const containerEl = document.createElement('div');
+                    containerEl.className = 'list-event-container';
+
+                    const titleEl = document.createElement('div');
+                    titleEl.className = 'list-event-title';
+                    titleEl.innerText = props.abbr || 'イベント'; // LTK DAY1など
+                    
+                    const matchEl = document.createElement('div');
+                    matchEl.className = 'list-event-match';
+                    const team1Name = props.team1Name || 'TBA';
+                    const team2Name = props.team2Name || 'TBA';
+                    matchEl.innerText = `${team1Name} vs ${team2Name}`;
+
+                    containerEl.appendChild(titleEl);
+                    containerEl.appendChild(matchEl);
+                    
+                    return { domNodes: [containerEl] };
+                }
+
+                // --- ここから下は月表示(dayGridMonth)用の既存ロジック ---
                 const props = arg.event.extendedProps;
 
                 // --- カードのルート要素 ---
